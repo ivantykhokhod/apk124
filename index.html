@@ -2,80 +2,1096 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skills & Goals Tracker</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Трекер Звичок | Android Style</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons (для сучасних іконок) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        gx: {
+                            base: '#0f0f15',      /* Дуже темний фон */
+                            panel: '#1c1c24',     /* Фон панелей */
+                            panelHover: '#252530',
+                            purple: '#7b42f6',    /* Основний фіолетовий */
+                            purpleGlow: '#9059ff',
+                            text: '#e0e0e0',
+                            muted: '#8b8b9c'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Стилізація під Android додаток */
+        body {
+            background-color: #0f0f15;
+            color: #e0e0e0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Прибираємо скролбар для нативного вигляду */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Анімація чекбокса */
+        .check-circle {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            min-width: 2.5rem; /* Збільшені тач-таргети для пальців */
+            min-height: 2.5rem;
+        }
+        .check-circle.completed {
+            background-color: #10b981; 
+            border-color: #10b981;
+            transform: scale(1.15);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+        
+        .check-path {
+            stroke-dasharray: 20;
+            stroke-dashoffset: 20;
+            transition: stroke-dashoffset 0.3s ease-in-out;
+        }
+        .check-circle.completed .check-path {
+            stroke-dashoffset: 0;
+        }
+
+        /* Закреслення тексту */
+        .strike-text {
+            position: relative;
+            display: inline-block;
+            transition: color 0.3s ease;
+        }
+        .strike-text::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 0;
+            height: 2px;
+            background-color: #8b8b9c;
+            transition: width 0.3s ease;
+        }
+        .habit-completed .strike-text {
+            color: #8b8b9c;
+        }
+        .habit-completed .strike-text::after {
+            width: 100%;
+        }
+
+        /* Світіння для вогника (стріка) */
+        .streak-fire {
+            text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+            animation: flicker 3s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 0.8; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1.05); }
+        }
+
+        /* Модальні вікна Android (Bottom Sheet / Dialog) */
+        #modal-overlay, #calendar-modal-overlay, #day-details-modal-overlay, #dialog-overlay {
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #modal-overlay.active, #calendar-modal-overlay.active, #day-details-modal-overlay.active, #dialog-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Плавний підйом знизу для мобільних модалок */
+        .modal-content {
+            transform: translateY(100px) scale(0.97);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #modal-overlay.active .modal-content, 
+        #calendar-modal-overlay.active .modal-content,
+        #day-details-modal-overlay.active .modal-content,
+        #dialog-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        /* Чекбокси для днів тижня */
+        .day-checkbox input:checked + div {
+            background-color: #7b42f6;
+            color: white;
+            border-color: #9059ff;
+            box-shadow: 0 0 10px rgba(123, 66, 246, 0.4);
+        }
+
+        /* Мотиваційний тост */
+        #celebration-toast {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+        }
+        #celebration-toast.show {
+            transform: translate(-50%, 0) scale(1);
+            opacity: 1;
+        }
+        #celebration-toast.hide {
+            transform: translate(-50%, -40px) scale(0.9);
+            opacity: 0;
+        }
+    </style>
 </head>
-<body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <span class="plus-icon" onclick="addSkill()" title="Додати навичку">+</span>
-                <h2>Навички</h2>
+<body class="min-h-screen flex flex-col text-gx-text overflow-hidden">
+
+    <!-- Елемент полотна для ефекту конфеті -->
+    <canvas id="celebration-canvas" class="fixed inset-0 pointer-events-none z-[100]"></canvas>
+
+    <!-- Головна частина програми (без сайдбару) -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden pb-20">
+        <!-- Хедер оптимізований під статус-бар мобільного -->
+        <header class="pt-8 px-6 pb-4 border-b border-[#2a2a36] bg-[#14141b]/95 backdrop-blur flex justify-between items-center z-10">
+            <div>
+                <h2 class="text-xl font-extrabold tracking-wide">Мій День</h2>
+                <p class="text-xs text-gx-purple font-medium mt-0.5" id="current-date-display">Сьогодні: --</p>
             </div>
-            <ul id="skills-list"></ul>
-        </aside>
-
-        <main class="main-content">
-            <div class="top-nav">
-                <h1 id="skill-title">Виберіть навичку</h1>
-                <div class="main-actions">
-                    <button class="btn btn-long" onclick="promptNewGoal('long')">+ Довгострокова</button>
-                    <button class="btn btn-mid" onclick="promptNewGoal('mid')">+ Середньострокова</button>
-                    <button class="btn btn-short" onclick="promptNewGoal('short')">+ Короткострокова</button>
-                    <button class="btn btn-template" onclick="openTemplateModal()">+ Шаблони</button>
-                </div>
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] uppercase font-bold tracking-widest bg-gx-purple/20 text-gx-purple px-2.5 py-1 rounded-full border border-gx-purple/30">Android v1.0</span>
             </div>
+        </header>
 
-            <section id="active-goals" class="goals-container"></section>
-
-            <section class="archive-section">
-                <div class="archive-header" onclick="toggleArchiveVisibility()">
-                    <h3>Архів виконаних цілей (<span id="archive-count">0</span>)</h3>
-                    <span id="archive-toggle-icon">▼</span>
-                </div>
-                <div id="archive-list" class="goals-container hidden"></div>
-            </section>
-        </main>
-    </div>
-
-    <div id="template-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Шаблони</h2>
-                <span class="close-modal" onclick="closeTemplateModal()">&times;</span>
+        <!-- Список звичок (зручний скрол для пальця) -->
+        <div class="flex-1 overflow-y-auto px-4 py-5 space-y-4">
+            <div id="habits-container" class="space-y-4 max-w-2xl mx-auto">
+                <!-- Звички генеруються через JS -->
             </div>
             
-            <div class="modal-body">
-                <button class="btn-create-template" onclick="toggleCreateTemplateForm()">+ Створити новий шаблон</button>
+            <div id="empty-state" class="hidden text-center pt-24">
+                <i class="ph ph-ghost text-5xl text-gx-muted/20 mb-3 inline-block"></i>
+                <h3 class="text-lg font-medium text-gx-muted">Поки що немає цілей</h3>
+                <p class="text-xs text-gx-muted/60 mt-1 max-w-xs mx-auto">Натисни кнопку "+" внизу, щоб додати першу звичку.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Плаваюча кругла кнопка Android (FAB) -->
+    <button onclick="openModal()" class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gx-purple hover:bg-gx-purpleGlow text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(123,66,246,0.6)] border border-white/10 active:scale-90 transition-transform" title="Додати звичку">
+        <i class="ph ph-plus text-2xl font-bold"></i>
+    </button>
+
+    <!-- Мотиваційний тост з неоновим світінням (Випливає при перемозі) -->
+    <div id="celebration-toast" class="fixed top-12 left-1/2 -translate-x-1/2 z-[110] pointer-events-none scale-90 opacity-0 flex flex-col items-center w-[90%] max-w-sm">
+        <div class="bg-gradient-to-r from-amber-400 via-pink-500 to-gx-purple px-6 py-3.5 rounded-2xl shadow-[0_0_25px_rgba(244,63,94,0.5)] border border-white/20 text-center w-full">
+            <div class="text-[10px] uppercase font-black tracking-widest text-white/80 mb-0.5">Досягнення отримано!</div>
+            <h2 id="celebration-text" class="text-base font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                Виконано, ти красавчик! ⚡
+            </h2>
+        </div>
+    </div>
+
+    <!-- Модальне вікно: Створення/Редагування Звички -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black/75 z-50 flex items-end sm:items-center justify-center">
+        <div class="modal-content bg-[#14141b] border-t sm:border border-[#2a2a36] rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[85vh]">
+            
+            <div class="p-5 border-b border-[#2a2a36] flex justify-between items-center">
+                <h3 id="modal-title" class="text-lg font-bold">Нова ціль</h3>
+                <button onclick="closeModal()" class="text-gx-muted hover:text-white p-2 rounded-full hover:bg-white/5 active:scale-95 transition-all">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-5 overflow-y-auto flex-1 space-y-5">
+                <input type="hidden" id="habit-id">
                 
-                <div id="create-template-form" class="template-form hidden">
-                    <input type="text" id="tpl-name" placeholder="Назва шаблону (напр. План на кожен день)">
-                    <div id="tpl-goals-list">
-                        <input type="text" class="tpl-goal-input" placeholder="Середньострокова ціль (основна)">
-                        <input type="text" class="tpl-goal-input" placeholder="Короткострокова ціль (підзадача 1)">
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn-add-input" onclick="addInputToTemplate()">+ Додати ще ціль</button>
-                        <button class="btn-save-tpl" onclick="saveNewTemplate()">Зберегти</button>
+                <!-- Назва -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted mb-2">Опис цілі (Назва):</label>
+                    <input type="text" id="habit-title" placeholder="Напр., Підтягування" class="w-full bg-gx-panel border border-[#2a2a36] focus:border-gx-purple focus:ring-1 focus:ring-gx-purple rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm">
+                </div>
+
+                <!-- Частота (Дні тижня) -->
+                <div class="bg-gx-panel border border-[#2a2a36] rounded-xl p-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted mb-3">Дні виконання</label>
+                    <div class="flex gap-1 justify-between" id="days-container">
+                        <!-- Дні генеруються через JS -->
                     </div>
                 </div>
 
-                <div class="my-templates-section">
-                    <h3>Мої шаблони</h3>
-                    <ul id="my-templates-list"></ul>
+                <!-- Чекліст -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted">Чек-лист (опціонально)</label>
+                        <button onclick="addChecklistItem()" class="text-xs text-gx-purple font-bold flex items-center gap-1 p-1">
+                            <i class="ph ph-plus-circle text-sm"></i> Додати
+                        </button>
+                    </div>
+                    <div id="checklist-container" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        <!-- Пункти чекліста -->
+                    </div>
                 </div>
+            </div>
 
-                <div class="attach-section">
-                    <h3>Вибрати ціль для прикріплення:</h3>
-                    <select id="parent-goal-select">
-                        <option value="root">Без прикріплення (в корінь)</option>
-                    </select>
+            <div class="p-5 border-t border-[#2a2a36] flex gap-3 bg-[#0f0f15]">
+                <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-semibold text-sm text-gx-muted hover:bg-white/5 active:scale-95 transition-all">Скасувати</button>
+                <button onclick="saveHabit()" class="flex-1 py-3 rounded-xl font-semibold text-sm bg-gx-purple hover:bg-gx-purpleGlow text-white active:scale-95 transition-all">Зберегти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальне вікно: Календар (Android-оптимізований) -->
+    <div id="calendar-modal-overlay" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="p-4 border-b border-[#2a2a36] flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gx-purple/20 flex items-center justify-center text-gx-purple">
+                    <i class="ph ph-calendar-check text-xl"></i>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h3 id="cal-modal-title" class="text-sm font-extrabold truncate">Назва звички</h3>
+                    <p class="text-[10px] text-gx-muted">Клацни на день для деталей</p>
+                </div>
+                <button onclick="closeCalendarModal()" class="text-gx-muted hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <button onclick="changeCalendarMonth(-1)" class="p-2 rounded-lg hover:bg-white/10 text-gx-muted hover:text-white">
+                        <i class="ph ph-caret-left"></i>
+                    </button>
+                    <h4 id="cal-month-year" class="font-bold text-sm text-center flex-1">Місяць 2026</h4>
+                    <button onclick="changeCalendarMonth(1)" class="p-2 rounded-lg hover:bg-white/10 text-gx-muted hover:text-white">
+                        <i class="ph ph-caret-right"></i>
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-7 gap-1 text-center mb-1">
+                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Пн</div>
+                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Вт</div>
+                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Ср</div>
+                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Чт</div>
+                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Пт</div>
+                    <div class="text-[10px] font-black uppercase text-rose-500 py-1">Сб</div>
+                    <div class="text-[10px] font-black uppercase text-rose-500 py-1">Нд</div>
+                </div>
+                
+                <div id="cal-grid" class="grid grid-cols-7 gap-1">
+                    <!-- Дні календаря -->
+                </div>
+                
+                <!-- Інструкція кольорів -->
+                <div class="mt-4 pt-3 border-t border-[#2a2a36] flex justify-between text-[9px] text-gx-muted font-bold uppercase tracking-wider">
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-[#10b981]"></div>
+                        <span>ТАК</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full bg-[#ef4444]"></div>
+                        <span>НІ</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <div class="w-2 h-2 rounded-full border border-gx-muted"></div>
+                        <span>ПОВЗ</span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Модальне вікно: Деталі дня (Bottom Sheet Style) -->
+    <div id="day-details-modal-overlay" class="fixed inset-0 bg-black/75 z-[60] flex items-end justify-center">
+        <div class="modal-content bg-gx-panel border-t border-[#2a2a36] rounded-t-2xl w-full max-w-md shadow-2xl overflow-hidden pb-6">
+            <div class="p-5 border-b border-[#2a2a36] flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="ph ph-activity text-xl"></i>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <h3 id="details-modal-title" class="text-sm font-extrabold truncate">Деталі тренування</h3>
+                    <p id="details-modal-date" class="text-[11px] text-gx-muted font-medium">Дата</p>
+                </div>
+                <button onclick="closeDayDetailsModal()" class="text-gx-muted hover:text-white p-2 rounded-full hover:bg-white/5 transition-all">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 space-y-5">
+                <!-- Статус дня -->
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-gx-muted mb-2">Статус виконання</label>
+                    <button id="details-day-status-btn" onclick="toggleDetailsDayStatus()" class="w-full py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 border text-sm active:scale-95">
+                        <!-- Статус -->
+                    </button>
+                </div>
+
+                <!-- Чекліст дня -->
+                <div id="details-checklist-section">
+                    <label class="block text-[10px] font-black uppercase tracking-wider text-gx-muted mb-2">Списки на цей день</label>
+                    <div id="details-checklist-container" class="space-y-1 bg-[#0f0f15] border border-[#2a2a36] rounded-xl p-3 max-h-40 overflow-y-auto custom-scrollbar">
+                        <!-- Пункти -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 pt-2 flex justify-end">
+                <button onclick="closeDayDetailsModal()" class="w-full py-3.5 bg-gx-purple hover:bg-gx-purpleGlow text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-[0_4px_15px_rgba(123,66,246,0.3)]">
+                    Готово
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кастомне Діалогове Вікно (Заміна alert/confirm) -->
+    <div id="dialog-overlay" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
+        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-2xl w-full max-w-xs shadow-2xl p-5 text-center">
+            <div class="flex flex-col items-center gap-3 mb-4">
+                <div id="dialog-icon-container" class="w-12 h-12 rounded-full flex items-center justify-center">
+                    <i id="dialog-icon" class="text-2xl"></i>
+                </div>
+                <h4 id="dialog-title" class="text-base font-extrabold">Сповіщення</h4>
+            </div>
+            <p id="dialog-message" class="text-gx-muted text-xs mb-5 leading-relaxed"></p>
+            <div class="flex gap-2 justify-stretch" id="dialog-buttons">
+                <!-- Кнопки -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Основний скрипт програми -->
+    <script>
+        // --- ДАНІ ТА СТАН ---
+        let habits = JSON.parse(localStorage.getItem('gx_habits')) || [];
+        let currentCalendarHabitId = null;
+        let currentDetailsDateStr = null;
+        let calendarDate = new Date(); 
+        let toastTimeoutId = null;
+
+        const DAYS_OF_WEEK = [
+            { id: 1, name: 'Пн' },
+            { id: 2, name: 'Вт' },
+            { id: 3, name: 'Ср' },
+            { id: 4, name: 'Чт' },
+            { id: 5, name: 'Пт' },
+            { id: 6, name: 'Сб' },
+            { id: 0, name: 'Нд' }
+        ];
+
+        // --- ANDROID TACTILE FEEDBACK (Vibration) ---
+        function triggerHaptic(type = 'light') {
+            if (!navigator.vibrate) return; // Пропускаємо, якщо пристрій не підтримує
+            
+            if (type === 'light') {
+                navigator.vibrate(30); // Короткий тихий клік чекбокса
+            } else if (type === 'success') {
+                navigator.vibrate([60, 40, 100]); // Подвійна перемога
+            } else if (type === 'warning') {
+                navigator.vibrate([100, 50, 100]); // Помилка або скасування
+            }
+        }
+
+        // --- КАСТОМНИЙ ДІАЛОГ ---
+        function showCustomDialog({ title, message, type = 'info', confirmText = 'OK', cancelText = '', onConfirm = null }) {
+            const overlay = document.getElementById('dialog-overlay');
+            const iconContainer = document.getElementById('dialog-icon-container');
+            const icon = document.getElementById('dialog-icon');
+            const titleEl = document.getElementById('dialog-title');
+            const msgEl = document.getElementById('dialog-message');
+            const btnContainer = document.getElementById('dialog-buttons');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (type === 'danger') {
+                iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center bg-red-500/20 text-red-500";
+                icon.className = "ph ph-warning-octagon";
+                triggerHaptic('warning');
+            } else if (type === 'warning') {
+                iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center bg-yellow-500/20 text-yellow-500";
+                icon.className = "ph ph-warning";
+                triggerHaptic('warning');
+            } else {
+                iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center bg-gx-purple/20 text-gx-purple";
+                icon.className = "ph ph-info";
+                triggerHaptic('light');
+            }
+
+            btnContainer.innerHTML = '';
+            
+            if (cancelText) {
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = "flex-1 py-2.5 rounded-xl text-xs text-gx-muted bg-[#14141b] border border-[#2a2a36] font-semibold active:scale-95 transition-all";
+                cancelBtn.textContent = cancelText;
+                cancelBtn.onclick = () => {
+                    overlay.classList.remove('active');
+                };
+                btnContainer.appendChild(cancelBtn);
+            }
+
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = `flex-1 py-2.5 rounded-xl text-xs font-semibold text-white active:scale-95 transition-all ${type === 'danger' ? 'bg-red-600' : 'bg-gx-purple'}`;
+            confirmBtn.textContent = confirmText;
+            confirmBtn.onclick = () => {
+                overlay.classList.remove('active');
+                if (onConfirm) onConfirm();
+            };
+            btnContainer.appendChild(confirmBtn);
+
+            overlay.classList.add('active');
+        }
+
+        // --- БЕРЛІНСЬКИЙ ЧАС ---
+        function getBerlinDateString(dateObj = new Date()) {
+            return new Intl.DateTimeFormat('en-CA', { 
+                timeZone: 'Europe/Berlin', 
+                year: 'numeric', month: '2-digit', day: '2-digit' 
+            }).format(dateObj);
+        }
+
+        function updateDateDisplay() {
+            const displayDate = new Intl.DateTimeFormat('uk-UA', { 
+                timeZone: 'Europe/Berlin',
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            }).format(new Date());
+            document.getElementById('current-date-display').textContent = displayDate;
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function saveData() {
+            localStorage.setItem('gx_habits', JSON.stringify(habits));
+        }
+
+        // --- СТРУКТУРА ДАНИХ ІСТОРІЇ ---
+        function ensureDayHistoryStructure(habit, dateStr) {
+            if (!habit.history) {
+                habit.history = {};
+            }
+            const existing = habit.history[dateStr];
+            if (!existing) {
+                habit.history[dateStr] = {
+                    completed: false,
+                    checklists: {}
+                };
+            } else if (typeof existing === 'boolean') {
+                habit.history[dateStr] = {
+                    completed: existing,
+                    checklists: {}
+                };
+            } else {
+                if (!existing.checklists) {
+                    existing.checklists = {};
+                }
+            }
+        }
+
+        function isChecklistCompleted(habit, dateStr, clId) {
+            const dayData = habit.history[dateStr];
+            if (!dayData) return false;
+            if (typeof dayData === 'boolean') return false; 
+            return !!dayData.checklists[clId];
+        }
+
+        // Стрік в днях згідно з розкладом
+        function calculateStreak(habit) {
+            const todayStr = getBerlinDateString();
+            let checkDate = new Date(todayStr);
+            let completedDates = [];
+            
+            for (let i = 0; i < 365; i++) {
+                const dateStr = getBerlinDateString(checkDate);
+                const dayOfWeek = checkDate.getDay();
+
+                if (habit.days.includes(dayOfWeek)) {
+                    const dayData = habit.history[dateStr];
+                    const isCompleted = dayData && (typeof dayData === 'boolean' ? dayData : dayData.completed);
+
+                    if (isCompleted) {
+                        completedDates.push(new Date(dateStr));
+                    } else {
+                        if (dateStr === todayStr) {
+                            // Пропускаємо сьогодні, якщо воно ще не відмічене
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+
+            if (completedDates.length === 0) return 0;
+            if (completedDates.length === 1) return 1;
+
+            const newest = completedDates[0];
+            const oldest = completedDates[completedDates.length - 1];
+            
+            const diffTime = Math.abs(newest - oldest);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            return diffDays + 1;
+        }
+
+        function evaluateStreaks() {
+            const todayStr = getBerlinDateString();
+
+            habits.forEach(habit => {
+                if (!habit.lastEvaluatedDate) {
+                    habit.lastEvaluatedDate = todayStr;
+                    return;
+                }
+
+                if (habit.lastEvaluatedDate !== todayStr) {
+                    if (habit.checklists) {
+                        habit.checklists.forEach(cl => cl.completed = false);
+                    }
+                    habit.lastEvaluatedDate = todayStr;
+                }
+                
+                habit.streak = calculateStreak(habit);
+            });
+            saveData();
+        }
+
+        // --- ЕФЕКТ КОНФЕТІ ---
+        function triggerConfetti() {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new ConfettiParticle());
+            }
+            if (!confettiAnimationId) {
+                animateConfetti();
+            }
+        }
+
+        // --- РЕНДЕР СПИСКУ ЗВИЧОК (Мобільний вигляд) ---
+        function renderHabits() {
+            const container = document.getElementById('habits-container');
+            const emptyState = document.getElementById('empty-state');
+            container.innerHTML = '';
+            
+            const todayStr = getBerlinDateString();
+
+            if (habits.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            habits.forEach(habit => {
+                const dayData = habit.history[todayStr];
+                const isCompletedToday = dayData && (typeof dayData === 'boolean' ? dayData : dayData.completed);
+
+                const habitEl = document.createElement('div');
+                habitEl.className = `bg-gx-panel border border-[#2a2a36] rounded-2xl p-4 flex gap-3 items-start transition-all duration-300 ${isCompletedToday ? 'habit-completed border-l-4 border-l-[#10b981]' : 'border-l-4 border-l-gx-purple'}`;
+                
+                const checkBtnHtml = `
+                    <button onclick="toggleMainHabit('${habit.id}')" class="mt-0.5 flex-shrink-0 w-10 h-10 rounded-full border-2 border-gx-muted flex items-center justify-center check-circle ${isCompletedToday ? 'completed' : 'hover:border-gx-purple'}" title="Відмітити">
+                        ${isCompletedToday ? `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline class="check-path" points="20 6 9 17 4 12"></polyline></svg>` : ''}
+                    </button>
+                `;
+
+                let checklistHtml = '';
+                if (habit.checklists && habit.checklists.length > 0) {
+                    const clItems = habit.checklists.map(cl => {
+                        const isCompleted = isChecklistCompleted(habit, todayStr, cl.id);
+                        return `
+                            <label class="flex items-center gap-2.5 text-sm cursor-pointer group mt-2.5 py-1">
+                                <input type="checkbox" class="hidden" onchange="toggleChecklistItem('${habit.id}', '${cl.id}')" ${isCompleted ? 'checked' : ''}>
+                                <div class="w-5 h-5 rounded bg-[#0f0f15] border border-[#2a2a36] flex items-center justify-center group-hover:border-gx-purple transition-colors ${isCompleted ? '!bg-gx-purple !border-gx-purple' : ''}">
+                                    ${isCompleted ? '<i class="ph ph-check text-sm text-white"></i>' : ''}
+                                </div>
+                                <span class="${isCompleted ? 'text-gx-muted line-through' : 'text-gray-300'} transition-colors">${cl.text}</span>
+                            </label>
+                        `;
+                    }).join('');
+                    
+                    const completedCount = habit.checklists.filter(cl => isChecklistCompleted(habit, todayStr, cl.id)).length;
+                    
+                    checklistHtml = `
+                        <div class="mt-2 flex gap-1.5 items-center text-[11px] font-bold bg-[#0f0f15] px-2.5 py-1 rounded-lg w-fit border border-[#2a2a36] text-gx-muted uppercase tracking-wider">
+                            <i class="ph ph-list-checks text-gx-purple text-xs"></i>
+                            <span>${completedCount}/${habit.checklists.length} виконано</span>
+                        </div>
+                        <div class="flex flex-col gap-1 mt-1 pl-1">
+                            ${clItems}
+                        </div>
+                    `;
+                }
+
+                let freqText = 'Вибрані дні';
+                if(habit.days.length === 7) freqText = 'Щодня';
+                else if (habit.days.length > 0) {
+                    freqText = habit.days.map(d => DAYS_OF_WEEK.find(day => day.id === d)?.name).join(', ');
+                }
+
+                const centerHtml = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-col">
+                            <h3 class="text-base font-bold strike-text truncate ${isCompletedToday ? 'text-gx-muted' : 'text-white'}">${habit.title}</h3>
+                            <span class="text-xs text-gx-muted mt-0.5">${freqText}</span>
+                        </div>
+                        ${checklistHtml}
+                    </div>
+                `;
+
+                const rightHtml = `
+                    <div class="flex flex-col items-end justify-between self-stretch pl-1 min-h-[4.5rem]">
+                        <div class="flex items-center gap-1 bg-[#14141b] border border-[#2a2a36] px-2 py-0.5 rounded-lg">
+                            <i class="ph-fill ph-fire text-[#ef4444] text-xs ${habit.streak > 0 ? 'streak-fire' : 'opacity-40'}"></i>
+                            <span class="font-black text-xs ${habit.streak > 0 ? 'text-white' : 'text-gx-muted'}">${habit.streak}</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-1.5 text-gx-muted">
+                            <button onclick="openCalendarModal('${habit.id}')" class="p-2 rounded-full hover:bg-white/5 hover:text-gx-purple transition-colors" title="Календар">
+                                <i class="ph ph-calendar-blank text-lg"></i>
+                            </button>
+                            <button onclick="openModal('${habit.id}')" class="p-2 rounded-full hover:bg-white/5 hover:text-[#3b82f6] transition-colors" title="Редагувати">
+                                <i class="ph ph-pencil-simple text-lg"></i>
+                            </button>
+                            <button onclick="deleteHabit('${habit.id}')" class="p-2 rounded-full hover:bg-white/5 hover:text-[#ef4444] transition-colors" title="Видалити">
+                                <i class="ph ph-trash text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                habitEl.innerHTML = checkBtnHtml + centerHtml + rightHtml;
+                container.appendChild(habitEl);
+            });
+        }
+
+        // --- ЛОГІКА ВЗАЄМОДІЇ ---
+        function toggleMainHabit(habitId) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return;
+
+            const todayStr = getBerlinDateString();
+            ensureDayHistoryStructure(habit, todayStr);
+
+            const isCompleted = habit.history[todayStr].completed;
+            habit.history[todayStr].completed = !isCompleted;
+
+            if (habit.history[todayStr].completed) {
+                triggerHaptic('success');
+                celebrateSuccess();
+            } else {
+                triggerHaptic('light');
+            }
+
+            habit.streak = calculateStreak(habit);
+            saveData();
+            renderHabits();
+        }
+
+        function toggleChecklistItem(habitId, clId) {
+            const habit = habits.find(h => h.id === habitId);
+            if (!habit) return;
+
+            const todayStr = getBerlinDateString();
+            ensureDayHistoryStructure(habit, todayStr);
+
+            const isCompleted = !!habit.history[todayStr].checklists[clId];
+            habit.history[todayStr].checklists[clId] = !isCompleted;
+
+            triggerHaptic('light');
+
+            // Якщо чекліст закритий — ніжний звуковий сигнал
+            if (habit.history[todayStr].checklists[clId]) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        const audioCtx = new AudioContext();
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
+                        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.12);
+                    }
+                } catch(e){}
+            }
+
+            saveData();
+            renderHabits();
+        }
+
+        function deleteHabit(habitId) {
+            showCustomDialog({
+                title: 'Видалити звичку?',
+                message: 'Цю корисну ціль буде стерто назавжди.',
+                type: 'danger',
+                confirmText: 'Стерти',
+                cancelText: 'Назад',
+                onConfirm: () => {
+                    habits = habits.filter(h => h.id !== habitId);
+                    saveData();
+                    renderHabits();
+                }
+            });
+        }
+
+        // --- МОДАЛЬНЕ ВІКНО СТВОРЕННЯ/РЕДАГУВАННЯ ---
+        function renderFormDays() {
+            const container = document.getElementById('days-container');
+            container.innerHTML = '';
+            DAYS_OF_WEEK.forEach(day => {
+                container.innerHTML += `
+                    <label class="day-checkbox cursor-pointer flex-1 text-center">
+                        <input type="checkbox" class="hidden" value="${day.id}" checked>
+                        <div class="py-3 rounded-xl border border-[#2a2a36] bg-[#14141b] text-gx-muted text-xs font-bold transition-all">
+                            ${day.name}
+                        </div>
+                    </label>
+                `;
+            });
+        }
+
+        function openModal(habitId = null) {
+            document.getElementById('modal-overlay').classList.add('active');
+            renderFormDays();
+            triggerHaptic('light');
+            
+            const titleInput = document.getElementById('habit-title');
+            const idInput = document.getElementById('habit-id');
+            const clContainer = document.getElementById('checklist-container');
+            
+            clContainer.innerHTML = '';
+
+            if (habitId) {
+                document.getElementById('modal-title').textContent = 'Редагувати ціль';
+                const habit = habits.find(h => h.id === habitId);
+                idInput.value = habit.id;
+                titleInput.value = habit.title;
+                
+                const dayInputs = document.querySelectorAll('.day-checkbox input');
+                dayInputs.forEach(input => {
+                    input.checked = habit.days.includes(parseInt(input.value));
+                });
+
+                if (habit.checklists) {
+                    habit.checklists.forEach(cl => addChecklistItemToForm(cl.text));
+                }
+            } else {
+                document.getElementById('modal-title').textContent = 'Нова ціль';
+                idInput.value = '';
+                titleInput.value = '';
+                document.querySelectorAll('.day-checkbox input').forEach(i => i.checked = true);
+                addChecklistItemToForm('');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+            triggerHaptic('light');
+        }
+
+        function addChecklistItemToForm(text = '') {
+            const container = document.getElementById('checklist-container');
+            const itemHtml = document.createElement('div');
+            itemHtml.className = 'flex items-center gap-2';
+            itemHtml.innerHTML = `
+                <i class="ph ph-dots-six-vertical text-gx-muted"></i>
+                <input type="text" value="${text}" placeholder="Пункт" class="cl-input flex-1 bg-[#14141b] border border-[#2a2a36] focus:border-gx-purple rounded-xl px-3 py-2.5 text-sm text-white outline-none">
+                <button onclick="this.parentElement.remove()" class="text-[#ef4444] p-2 hover:bg-red-500/10 rounded-xl"><i class="ph ph-trash"></i></button>
+            `;
+            container.appendChild(itemHtml);
+        }
+
+        function addChecklistItem() {
+            addChecklistItemToForm('');
+            triggerHaptic('light');
+            const container = document.getElementById('checklist-container');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function saveHabit() {
+            const id = document.getElementById('habit-id').value;
+            const title = document.getElementById('habit-title').value.trim();
+            
+            if (!title) {
+                showCustomDialog({
+                    title: 'Увага',
+                    message: 'Будь ласка, введіть назву цілі.',
+                    type: 'warning'
+                });
+                return;
+            }
+
+            const selectedDays = Array.from(document.querySelectorAll('.day-checkbox input:checked'))
+                                    .map(input => parseInt(input.value));
+            
+            if (selectedDays.length === 0) {
+                showCustomDialog({
+                    title: 'Увага',
+                    message: 'Оберіть принаймні один день.',
+                    type: 'warning'
+                });
+                return;
+            }
+
+            const clInputs = document.querySelectorAll('.cl-input');
+            const checklists = [];
+            clInputs.forEach(input => {
+                if (input.value.trim()) {
+                    checklists.push({
+                        id: generateId(),
+                        text: input.value.trim()
+                    });
+                }
+            });
+
+            if (id) {
+                const habit = habits.find(h => h.id === id);
+                habit.title = title;
+                habit.days = selectedDays;
+                
+                const newChecklists = checklists.map(newCl => {
+                    const existing = (habit.checklists || []).find(oldCl => oldCl.text === newCl.text);
+                    if (existing) return existing;
+                    return newCl;
+                });
+                habit.checklists = newChecklists;
+                habit.streak = calculateStreak(habit);
+            } else {
+                const newHabit = {
+                    id: generateId(),
+                    title: title,
+                    days: selectedDays,
+                    checklists: checklists,
+                    history: {},
+                    streak: 0,
+                    lastEvaluatedDate: getBerlinDateString(),
+                    createdAt: getBerlinDateString()
+                };
+                habits.push(newHabit);
+            }
+
+            triggerHaptic('success');
+            saveData();
+            renderHabits();
+            closeModal();
+        }
+
+        // --- КАЛЕНДАР ---
+        function openCalendarModal(habitId) {
+            currentCalendarHabitId = habitId;
+            calendarDate = new Date();
+            renderCalendar();
+            triggerHaptic('light');
+            document.getElementById('calendar-modal-overlay').classList.add('active');
+        }
+
+        function closeCalendarModal() {
+            document.getElementById('calendar-modal-overlay').classList.remove('active');
+            currentCalendarHabitId = null;
+            triggerHaptic('light');
+        }
+
+        function changeCalendarMonth(offset) {
+            calendarDate.setMonth(calendarDate.getMonth() + offset);
+            triggerHaptic('light');
+            renderCalendar();
+        }
+
+        // --- ДЕТАЛІ ДНЯ (Bottom Sheet) ---
+        function openDayDetailsModal(dateString) {
+            currentDetailsDateStr = dateString;
+            const habit = habits.find(h => h.id === currentCalendarHabitId);
+            if (!habit) return;
+
+            ensureDayHistoryStructure(habit, dateString);
+            triggerHaptic('light');
+
+            const dateObj = new Date(dateString);
+            const formattedDate = new Intl.DateTimeFormat('uk-UA', { 
+                weekday: 'long', month: 'long', day: 'numeric' 
+            }).format(dateObj);
+
+            document.getElementById('details-modal-title').textContent = habit.title;
+            document.getElementById('details-modal-date').textContent = formattedDate;
+
+            renderDayDetailsContent();
+            document.getElementById('day-details-modal-overlay').classList.add('active');
+        }
+
+        function renderDayDetailsContent() {
+            const habit = habits.find(h => h.id === currentCalendarHabitId);
+            if (!habit || !currentDetailsDateStr) return;
+
+            const dayData = habit.history[currentDetailsDateStr];
+            const isCompleted = dayData.completed;
+
+            const statusBtn = document.getElementById('details-day-status-btn');
+            if (isCompleted) {
+                statusBtn.className = "w-full py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30";
+                statusBtn.innerHTML = `<i class="ph-fill ph-check-circle text-lg"></i> День виконано`;
+            } else {
+                statusBtn.className = "w-full py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 bg-[#14141b] text-gx-muted border border-[#2a2a36] hover:bg-white/5";
+                statusBtn.innerHTML = `<i class="ph ph-circle text-lg"></i> День не виконано`;
+            }
+
+            const clContainer = document.getElementById('details-checklist-container');
+            const clSection = document.getElementById('details-checklist-section');
+            clContainer.innerHTML = '';
+
+            if (habit.checklists && habit.checklists.length > 0) {
+                clSection.classList.remove('hidden');
+                habit.checklists.forEach(cl => {
+                    const isClCompleted = !!dayData.checklists[cl.id];
+                    clContainer.innerHTML += `
+                        <label class="flex items-center gap-2.5 text-sm cursor-pointer group py-2.5 border-b border-[#2a2a36]/30 last:border-none">
+                            <input type="checkbox" class="hidden" onchange="toggleDetailsChecklistItem('${cl.id}')" ${isClCompleted ? 'checked' : ''}>
+                            <div class="w-5 h-5 rounded bg-[#14141b] border border-[#2a2a36] flex items-center justify-center group-hover:border-gx-purple transition-colors ${isClCompleted ? '!bg-gx-purple !border-gx-purple' : ''}">
+                                ${isClCompleted ? '<i class="ph ph-check text-xs text-white"></i>' : ''}
+                            </div>
+                            <span class="${isClCompleted ? 'text-gx-muted line-through' : 'text-gray-300'} transition-colors">${cl.text}</span>
+                        </label>
+                    `;
+                });
+            } else {
+                clSection.classList.add('hidden');
+            }
+        }
+
+        function toggleDetailsDayStatus() {
+            const habit = habits.find(h => h.id === currentCalendarHabitId);
+            if (!habit || !currentDetailsDateStr) return;
+
+            ensureDayHistoryStructure(habit, currentDetailsDateStr);
+            habit.history[currentDetailsDateStr].completed = !habit.history[currentDetailsDateStr].completed;
+
+            if (habit.history[currentDetailsDateStr].completed) {
+                triggerHaptic('success');
+                celebrateSuccess();
+            } else {
+                triggerHaptic('warning');
+            }
+
+            habit.streak = calculateStreak(habit);
+            saveData();
+            renderHabits();
+            renderCalendar();
+            renderDayDetailsContent();
+        }
+
+        function toggleDetailsChecklistItem(clId) {
+            const habit = habits.find(h => h.id === currentCalendarHabitId);
+            if (!habit || !currentDetailsDateStr) return;
+
+            ensureDayHistoryStructure(habit, currentDetailsDateStr);
+            const isCompleted = !!habit.history[currentDetailsDateStr].checklists[clId];
+            habit.history[currentDetailsDateStr].checklists[clId] = !isCompleted;
+
+            triggerHaptic('light');
+            saveData();
+            renderHabits();
+            renderDayDetailsContent();
+        }
+
+        function closeDayDetailsModal() {
+            document.getElementById('day-details-modal-overlay').classList.remove('active');
+            currentDetailsDateStr = null;
+            triggerHaptic('light');
+        }
+
+        function renderCalendar() {
+            if (!currentCalendarHabitId) return;
+            const habit = habits.find(h => h.id === currentCalendarHabitId);
+            if (!habit) return;
+
+            document.getElementById('cal-modal-title').textContent = habit.title;
+
+            const year = calendarDate.getFullYear();
+            const month = calendarDate.getMonth();
+            
+            const monthNames = ["Січень", "Лютий", "Березень", "Квітень", "Травень", "Червень", "Липень", "Серпень", "Вересень", "Жовтень", "Листопад", "Грудень"];
+            document.getElementById('cal-month-year').textContent = `${monthNames[month]} ${year}`;
+
+            const grid = document.getElementById('cal-grid');
+            grid.innerHTML = '';
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            
+            let startDayIndex = firstDay.getDay() - 1;
+            if (startDayIndex === -1) startDayIndex = 6;
+
+            for (let i = 0; i < startDayIndex; i++) {
+                grid.innerHTML += `<div></div>`;
+            }
+
+            const todayStr = getBerlinDateString();
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dString = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                
+                const dayData = habit.history[dString];
+                const isCompleted = dayData && (typeof dayData === 'boolean' ? dayData : dayData.completed);
+                
+                const dateObj = new Date(year, month, i);
+                const dayOfWeek = dateObj.getDay();
+                const isScheduled = habit.days.includes(dayOfWeek);
+                const isFuture = dString > todayStr;
+                const isToday = dString === todayStr;
+
+                let classes = "w-9 h-9 mx-auto flex flex-col items-center justify-center rounded-xl text-xs font-bold relative transition-all duration-200 select-none ";
+                let dotHtml = "";
+                let clickAction = "";
+
+                if (!isFuture) {
+                    classes += "cursor-pointer active:scale-90 ";
+                    clickAction = `onclick="openDayDetailsModal('${dString}')"`;
+                } else {
+                    classes += "opacity-30 cursor-not-allowed ";
+                }
+
+                if (isCompleted) {
+                    classes += "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 ";
+                    dotHtml = `<div class="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-0.5"></div>`;
+                } else if (!isFuture && isScheduled) {
+                    classes += "bg-rose-500/10 text-rose-400 border border-rose-500/20 ";
+                    dotHtml = `<div class="w-1.5 h-1.5 bg-rose-400 rounded-full mt-0.5"></div>`;
+                } else if (isToday) {
+                    classes += "border border-gx-purple text-gx-purple ";
+                } else {
+                    classes += "bg-white/5 text-gx-muted ";
+                }
+
+                grid.innerHTML += `
+                    <div class="py-1 flex justify-center">
+                        <div ${clickAction} class="${classes}">
+                            <span class="leading-none">${i}</span>
+                            ${dotHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- ІНІЦІАЛІЗАЦІЯ ---
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDateDisplay();
+            evaluateStreaks();
+            renderHabits();
+        });
+
+        // Конфеті рендер
+        const particles = [];
+        let confettiAnimationId = null;
+
+        // Керування закриттям
+        document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        document.getElementById('calendar-modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeCalendarModal(); });
+        document.getElementById('day-details-modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeDayDetailsModal(); });
+        document.getElementById('dialog-overlay').addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+    </script>
 </body>
 </html>

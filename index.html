@@ -2,8 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Трекер Звичок | Android Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер Звичок | GX Style</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Phosphor Icons (для сучасних іконок) -->
@@ -33,32 +33,39 @@
     </script>
     
     <style>
-        /* Стилізація під Android додаток */
+        /* Кастомні анімації та стилі */
         body {
             background-color: #0f0f15;
             color: #e0e0e0;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Прибираємо скролбар для нативного вигляду */
+        /* Кастомний скроллбар у стилі Opera GX */
         ::-webkit-scrollbar {
-            display: none;
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0f15; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f4e; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7b42f6; 
         }
 
         /* Анімація чекбокса */
         .check-circle {
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            min-width: 2.5rem; /* Збільшені тач-таргети для пальців */
-            min-height: 2.5rem;
         }
         .check-circle.completed {
-            background-color: #10b981; 
+            background-color: #10b981; /* Зелений колір успіху */
             border-color: #10b981;
-            transform: scale(1.15);
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
         
+        /* Анімація малювання галочки */
         .check-path {
             stroke-dasharray: 20;
             stroke-dashoffset: 20;
@@ -101,28 +108,35 @@
             100% { opacity: 1; transform: scale(1.05); }
         }
 
-        /* Модальні вікна Android (Bottom Sheet / Dialog) */
+        /* Світіння кнопок */
+        .gx-btn {
+            transition: all 0.2s ease;
+        }
+        .gx-btn:hover {
+            box-shadow: 0 0 12px rgba(123, 66, 246, 0.5);
+            border-color: #9059ff;
+        }
+
+        /* Модальне вікно анімація */
         #modal-overlay, #calendar-modal-overlay, #day-details-modal-overlay, #dialog-overlay {
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(5px);
             opacity: 0;
             visibility: hidden;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.2s ease;
         }
         #modal-overlay.active, #calendar-modal-overlay.active, #day-details-modal-overlay.active, #dialog-overlay.active {
             opacity: 1;
             visibility: visible;
         }
-        
-        /* Плавний підйом знизу для мобільних модалок */
         .modal-content {
-            transform: translateY(100px) scale(0.97);
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         #modal-overlay.active .modal-content, 
         #calendar-modal-overlay.active .modal-content,
         #day-details-modal-overlay.active .modal-content,
         #dialog-overlay.active .modal-content {
-            transform: translateY(0) scale(1);
+            transform: scale(1) translateY(0);
         }
 
         /* Чекбокси для днів тижня */
@@ -130,154 +144,174 @@
             background-color: #7b42f6;
             color: white;
             border-color: #9059ff;
-            box-shadow: 0 0 10px rgba(123, 66, 246, 0.4);
+            box-shadow: 0 0 8px rgba(123, 66, 246, 0.4);
         }
 
-        /* Мотиваційний тост */
+        /* Покращена анімація появи та зникнення тосту */
         #celebration-toast {
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
         }
         #celebration-toast.show {
             transform: translate(-50%, 0) scale(1);
             opacity: 1;
         }
         #celebration-toast.hide {
-            transform: translate(-50%, -40px) scale(0.9);
+            transform: translate(-50%, -50px) scale(0.9);
             opacity: 0;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-gx-text overflow-hidden">
+<body class="min-h-screen flex text-gx-text overflow-hidden">
 
     <!-- Елемент полотна для ефекту конфеті -->
     <canvas id="celebration-canvas" class="fixed inset-0 pointer-events-none z-[100]"></canvas>
 
-    <!-- Головна частина програми (без сайдбару) -->
-    <main class="flex-1 flex flex-col h-screen overflow-hidden pb-20">
-        <!-- Хедер оптимізований під статус-бар мобільного -->
-        <header class="pt-8 px-6 pb-4 border-b border-[#2a2a36] bg-[#14141b]/95 backdrop-blur flex justify-between items-center z-10">
+    <!-- Сайдбар -->
+    <aside class="w-64 bg-[#14141b] border-r border-[#2a2a36] hidden md:flex flex-col">
+        <div class="p-6 flex items-center gap-3">
+            <i class="ph ph-hexagon-fill text-gx-purple text-3xl"></i>
+            <h1 class="font-bold text-xl tracking-wider">TRACKER</h1>
+        </div>
+        
+        <!-- Декоративний блок -->
+        <div class="flex-1 flex flex-col justify-center items-center px-6 text-center opacity-20">
+            <i class="ph ph-target text-4xl mb-2 text-gx-purple"></i>
+            <p class="text-xs tracking-wider uppercase">Твій день — твої правила</p>
+        </div>
+
+        <div class="p-6 border-t border-[#2a2a36] flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-gx-purple to-blue-500 flex items-center justify-center font-bold">
+                GX
+            </div>
             <div>
-                <h2 class="text-xl font-extrabold tracking-wide">Мій День</h2>
-                <p class="text-xs text-gx-purple font-medium mt-0.5" id="current-date-display">Сьогодні: --</p>
+                <div class="font-medium text-sm">Користувач</div>
+                <div class="text-xs text-gx-purple">Ранг: Майстер</div>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="text-[10px] uppercase font-bold tracking-widest bg-gx-purple/20 text-gx-purple px-2.5 py-1 rounded-full border border-gx-purple/30">Android v1.0</span>
+        </div>
+    </aside>
+
+    <!-- Основна частина -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <!-- Хедер -->
+        <header class="p-6 border-b border-[#2a2a36] bg-[#14141b]/80 backdrop-blur flex justify-between items-center z-10">
+            <div>
+                <h2 class="text-2xl font-bold">Усі звички</h2>
+                <p class="text-sm text-gx-muted mt-1" id="current-date-display">Сьогодні: --</p>
             </div>
+            <button onclick="openModal()" class="gx-btn flex items-center gap-2 bg-gx-purple hover:bg-gx-purpleGlow text-white px-5 py-2.5 rounded-lg font-medium border border-transparent shadow-[0_0_15px_rgba(123,66,246,0.2)]">
+                <i class="ph ph-plus-circle text-xl"></i>
+                Додати звичку
+            </button>
         </header>
 
-        <!-- Список звичок (зручний скрол для пальця) -->
-        <div class="flex-1 overflow-y-auto px-4 py-5 space-y-4">
-            <div id="habits-container" class="space-y-4 max-w-2xl mx-auto">
+        <!-- Список звичок -->
+        <div class="flex-1 overflow-y-auto p-6 lg:p-10">
+            <div id="habits-container" class="max-w-4xl mx-auto space-y-4">
                 <!-- Звички генеруються через JS -->
             </div>
             
-            <div id="empty-state" class="hidden text-center pt-24">
-                <i class="ph ph-ghost text-5xl text-gx-muted/20 mb-3 inline-block"></i>
-                <h3 class="text-lg font-medium text-gx-muted">Поки що немає цілей</h3>
-                <p class="text-xs text-gx-muted/60 mt-1 max-w-xs mx-auto">Натисни кнопку "+" внизу, щоб додати першу звичку.</p>
+            <div id="empty-state" class="hidden text-center mt-20">
+                <i class="ph ph-ghost text-6xl text-gx-muted/30 mb-4 inline-block"></i>
+                <h3 class="text-xl font-medium text-gx-muted">Тут поки порожньо</h3>
+                <p class="text-sm text-gx-muted/70 mt-2">Створи свою першу звичку, щоб розпочати.</p>
             </div>
         </div>
     </main>
 
-    <!-- Плаваюча кругла кнопка Android (FAB) -->
-    <button onclick="openModal()" class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gx-purple hover:bg-gx-purpleGlow text-white rounded-full flex items-center justify-center shadow-[0_4px_20px_rgba(123,66,246,0.6)] border border-white/10 active:scale-90 transition-transform" title="Додати звичку">
-        <i class="ph ph-plus text-2xl font-bold"></i>
-    </button>
-
     <!-- Мотиваційний тост з неоновим світінням (Випливає при перемозі) -->
-    <div id="celebration-toast" class="fixed top-12 left-1/2 -translate-x-1/2 z-[110] pointer-events-none scale-90 opacity-0 flex flex-col items-center w-[90%] max-w-sm">
-        <div class="bg-gradient-to-r from-amber-400 via-pink-500 to-gx-purple px-6 py-3.5 rounded-2xl shadow-[0_0_25px_rgba(244,63,94,0.5)] border border-white/20 text-center w-full">
-            <div class="text-[10px] uppercase font-black tracking-widest text-white/80 mb-0.5">Досягнення отримано!</div>
-            <h2 id="celebration-text" class="text-base font-black text-white tracking-wide uppercase drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+    <div id="celebration-toast" class="fixed top-10 left-1/2 -translate-x-1/2 z-[110] pointer-events-none scale-90 opacity-0 flex flex-col items-center">
+        <div class="bg-gradient-to-r from-amber-400 via-pink-500 to-gx-purple px-8 py-4 rounded-2xl shadow-[0_0_30px_rgba(244,63,94,0.6)] border border-white/20 text-center">
+            <div class="text-xs uppercase font-extrabold tracking-widest text-white/90 drop-shadow mb-1">Рівень підвищено!</div>
+            <h2 id="celebration-text" class="text-xl lg:text-2xl font-black text-white tracking-wide uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
                 Виконано, ти красавчик! ⚡
             </h2>
         </div>
     </div>
 
     <!-- Модальне вікно: Створення/Редагування Звички -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/75 z-50 flex items-end sm:items-center justify-center">
-        <div class="modal-content bg-[#14141b] border-t sm:border border-[#2a2a36] rounded-t-2xl sm:rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[85vh]">
+    <div id="modal-overlay" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
             
             <div class="p-5 border-b border-[#2a2a36] flex justify-between items-center">
-                <h3 id="modal-title" class="text-lg font-bold">Нова ціль</h3>
-                <button onclick="closeModal()" class="text-gx-muted hover:text-white p-2 rounded-full hover:bg-white/5 active:scale-95 transition-all">
-                    <i class="ph ph-x text-lg"></i>
+                <h3 id="modal-title" class="text-xl font-bold">Редагувати ціль</h3>
+                <button onclick="closeModal()" class="text-gx-muted hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors">
+                    <i class="ph ph-x text-xl"></i>
                 </button>
             </div>
 
-            <div class="p-5 overflow-y-auto flex-1 space-y-5">
+            <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
                 <input type="hidden" id="habit-id">
                 
                 <!-- Назва -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted mb-2">Опис цілі (Назва):</label>
-                    <input type="text" id="habit-title" placeholder="Напр., Підтягування" class="w-full bg-gx-panel border border-[#2a2a36] focus:border-gx-purple focus:ring-1 focus:ring-gx-purple rounded-xl px-4 py-3.5 text-white outline-none transition-all text-sm">
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gx-muted mb-2">Опис цілі (Назва):</label>
+                    <input type="text" id="habit-title" placeholder="Напр., Підтягування" class="w-full bg-[#0f0f15] border border-[#2a2a36] focus:border-gx-purple focus:ring-1 focus:ring-gx-purple rounded-lg px-4 py-3 text-white outline-none transition-all">
                 </div>
 
                 <!-- Частота (Дні тижня) -->
-                <div class="bg-gx-panel border border-[#2a2a36] rounded-xl p-4">
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted mb-3">Дні виконання</label>
-                    <div class="flex gap-1 justify-between" id="days-container">
+                <div class="mb-5 bg-[#0f0f15] border border-[#2a2a36] rounded-lg p-4">
+                    <label class="block text-sm font-medium text-white mb-3">Частота виконання (Дні тижня)</label>
+                    <div class="flex flex-wrap gap-2 justify-between" id="days-container">
                         <!-- Дні генеруються через JS -->
                     </div>
                 </div>
 
                 <!-- Чекліст -->
-                <div>
+                <div class="mb-2">
                     <div class="flex justify-between items-center mb-2">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted">Чек-лист (опціонально)</label>
-                        <button onclick="addChecklistItem()" class="text-xs text-gx-purple font-bold flex items-center gap-1 p-1">
-                            <i class="ph ph-plus-circle text-sm"></i> Додати
+                        <label class="block text-sm font-medium text-white">Чек-лист (опціонально)</label>
+                        <button onclick="addChecklistItem()" class="text-xs text-gx-purple hover:text-gx-purpleGlow flex items-center gap-1">
+                            <i class="ph ph-plus"></i> Додати пункт
                         </button>
                     </div>
-                    <div id="checklist-container" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                    <div id="checklist-container" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-1">
                         <!-- Пункти чекліста -->
                     </div>
                 </div>
             </div>
 
-            <div class="p-5 border-t border-[#2a2a36] flex gap-3 bg-[#0f0f15]">
-                <button onclick="closeModal()" class="flex-1 py-3 rounded-xl font-semibold text-sm text-gx-muted hover:bg-white/5 active:scale-95 transition-all">Скасувати</button>
-                <button onclick="saveHabit()" class="flex-1 py-3 rounded-xl font-semibold text-sm bg-gx-purple hover:bg-gx-purpleGlow text-white active:scale-95 transition-all">Зберегти</button>
+            <div class="p-5 border-t border-[#2a2a36] flex justify-end gap-3 bg-[#14141b] rounded-b-xl">
+                <button onclick="closeModal()" class="px-5 py-2.5 rounded-lg font-medium text-gx-muted hover:bg-white/5 transition-colors">Скасувати</button>
+                <button onclick="saveHabit()" class="gx-btn bg-gx-purple hover:bg-gx-purpleGlow text-white px-5 py-2.5 rounded-lg font-medium">Зберегти</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальне вікно: Календар (Android-оптимізований) -->
-    <div id="calendar-modal-overlay" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
-        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
-            <div class="p-4 border-b border-[#2a2a36] flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-gx-purple/20 flex items-center justify-center text-gx-purple">
-                    <i class="ph ph-calendar-check text-xl"></i>
+    <!-- Модальне вікно: Календар -->
+    <div id="calendar-modal-overlay" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div class="p-5 border-b border-[#2a2a36] flex items-center gap-3">
+                <div class="w-10 h-10 rounded-lg bg-gx-purple/20 flex items-center justify-center text-gx-purple">
+                    <i class="ph ph-calendar-check text-2xl"></i>
                 </div>
                 <div class="flex-1 overflow-hidden">
-                    <h3 id="cal-modal-title" class="text-sm font-extrabold truncate">Назва звички</h3>
-                    <p class="text-[10px] text-gx-muted">Клацни на день для деталей</p>
+                    <h3 id="cal-modal-title" class="text-lg font-bold truncate">Назва звички</h3>
+                    <p class="text-xs text-gx-muted">Клікніть на день, щоб відкрити деталі</p>
                 </div>
-                <button onclick="closeCalendarModal()" class="text-gx-muted hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors">
-                    <i class="ph ph-x text-lg"></i>
+                <button onclick="closeCalendarModal()" class="text-gx-muted hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors">
+                    <i class="ph ph-x text-xl"></i>
                 </button>
             </div>
             
-            <div class="p-4">
-                <div class="flex justify-between items-center mb-3">
-                    <button onclick="changeCalendarMonth(-1)" class="p-2 rounded-lg hover:bg-white/10 text-gx-muted hover:text-white">
+            <div class="p-5">
+                <div class="flex justify-between items-center mb-4">
+                    <button onclick="changeCalendarMonth(-1)" class="p-2 rounded-lg hover:bg-white/10 text-gx-muted hover:text-white transition-colors">
                         <i class="ph ph-caret-left"></i>
                     </button>
-                    <h4 id="cal-month-year" class="font-bold text-sm text-center flex-1">Місяць 2026</h4>
-                    <button onclick="changeCalendarMonth(1)" class="p-2 rounded-lg hover:bg-white/10 text-gx-muted hover:text-white">
+                    <h4 id="cal-month-year" class="font-medium text-center flex-1">Травень 2026</h4>
+                    <button onclick="changeCalendarMonth(1)" class="p-2 rounded-lg hover:bg-white/10 text-gx-muted hover:text-white transition-colors">
                         <i class="ph ph-caret-right"></i>
                     </button>
                 </div>
                 
-                <div class="grid grid-cols-7 gap-1 text-center mb-1">
-                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Пн</div>
-                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Вт</div>
-                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Ср</div>
-                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Чт</div>
-                    <div class="text-[10px] font-black uppercase text-gx-muted py-1">Пт</div>
-                    <div class="text-[10px] font-black uppercase text-rose-500 py-1">Сб</div>
-                    <div class="text-[10px] font-black uppercase text-rose-500 py-1">Нд</div>
+                <div class="grid grid-cols-7 gap-1 text-center mb-2">
+                    <div class="text-xs font-semibold text-gx-muted py-1">Пн</div>
+                    <div class="text-xs font-semibold text-gx-muted py-1">Вт</div>
+                    <div class="text-xs font-semibold text-gx-muted py-1">Ср</div>
+                    <div class="text-xs font-semibold text-gx-muted py-1">Чт</div>
+                    <div class="text-xs font-semibold text-gx-muted py-1">Пт</div>
+                    <div class="text-xs font-semibold text-[#f87171] py-1">Сб</div>
+                    <div class="text-xs font-semibold text-[#f87171] py-1">Нд</div>
                 </div>
                 
                 <div id="cal-grid" class="grid grid-cols-7 gap-1">
@@ -285,60 +319,60 @@
                 </div>
                 
                 <!-- Інструкція кольорів -->
-                <div class="mt-4 pt-3 border-t border-[#2a2a36] flex justify-between text-[9px] text-gx-muted font-bold uppercase tracking-wider">
+                <div class="mt-4 pt-3 border-t border-[#2a2a36] flex justify-between text-[11px] text-gx-muted">
                     <div class="flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full bg-[#10b981]"></div>
-                        <span>ТАК</span>
+                        <div class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></div>
+                        <span>Виконано</span>
                     </div>
                     <div class="flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full bg-[#ef4444]"></div>
-                        <span>НІ</span>
+                        <div class="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></div>
+                        <span>Пропущено</span>
                     </div>
                     <div class="flex items-center gap-1">
-                        <div class="w-2 h-2 rounded-full border border-gx-muted"></div>
-                        <span>ПОВЗ</span>
+                        <div class="w-2.5 h-2.5 rounded-full border border-gx-muted"></div>
+                        <span>Не заплановано</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модальне вікно: Деталі дня (Bottom Sheet Style) -->
-    <div id="day-details-modal-overlay" class="fixed inset-0 bg-black/75 z-[60] flex items-end justify-center">
-        <div class="modal-content bg-gx-panel border-t border-[#2a2a36] rounded-t-2xl w-full max-w-md shadow-2xl overflow-hidden pb-6">
+    <!-- Модальне вікно: Деталі дня (Чеклісти та Статус за конкретний день) -->
+    <div id="day-details-modal-overlay" class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-xl w-full max-w-sm shadow-2xl overflow-hidden">
             <div class="p-5 border-b border-[#2a2a36] flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <i class="ph ph-activity text-xl"></i>
+                <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="ph ph-activity text-2xl"></i>
                 </div>
                 <div class="flex-1 overflow-hidden">
-                    <h3 id="details-modal-title" class="text-sm font-extrabold truncate">Деталі тренування</h3>
-                    <p id="details-modal-date" class="text-[11px] text-gx-muted font-medium">Дата</p>
+                    <h3 id="details-modal-title" class="text-lg font-bold truncate">Деталі дня</h3>
+                    <p id="details-modal-date" class="text-xs text-gx-muted">Дата</p>
                 </div>
-                <button onclick="closeDayDetailsModal()" class="text-gx-muted hover:text-white p-2 rounded-full hover:bg-white/5 transition-all">
-                    <i class="ph ph-x text-lg"></i>
+                <button onclick="closeDayDetailsModal()" class="text-gx-muted hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors">
+                    <i class="ph ph-x text-xl"></i>
                 </button>
             </div>
             
-            <div class="p-5 space-y-5">
+            <div class="p-5 space-y-6">
                 <!-- Статус дня -->
                 <div>
-                    <label class="block text-[10px] font-black uppercase tracking-wider text-gx-muted mb-2">Статус виконання</label>
-                    <button id="details-day-status-btn" onclick="toggleDetailsDayStatus()" class="w-full py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 border text-sm active:scale-95">
-                        <!-- Статус -->
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted mb-2">Статус виконання дня</label>
+                    <button id="details-day-status-btn" onclick="toggleDetailsDayStatus()" class="w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 border">
+                        <!-- Динамічний статус -->
                     </button>
                 </div>
 
                 <!-- Чекліст дня -->
                 <div id="details-checklist-section">
-                    <label class="block text-[10px] font-black uppercase tracking-wider text-gx-muted mb-2">Списки на цей день</label>
-                    <div id="details-checklist-container" class="space-y-1 bg-[#0f0f15] border border-[#2a2a36] rounded-xl p-3 max-h-40 overflow-y-auto custom-scrollbar">
-                        <!-- Пункти -->
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gx-muted mb-2">Чек-лист на цей день</label>
+                    <div id="details-checklist-container" class="space-y-2 bg-[#0f0f15] border border-[#2a2a36] rounded-lg p-3 max-h-48 overflow-y-auto custom-scrollbar">
+                        <!-- Динамічні пункти -->
                     </div>
                 </div>
             </div>
 
-            <div class="px-5 pt-2 flex justify-end">
-                <button onclick="closeDayDetailsModal()" class="w-full py-3.5 bg-gx-purple hover:bg-gx-purpleGlow text-white rounded-xl font-bold text-sm active:scale-95 transition-all shadow-[0_4px_15px_rgba(123,66,246,0.3)]">
+            <div class="p-5 border-t border-[#2a2a36] flex justify-end bg-[#14141b]">
+                <button onclick="closeDayDetailsModal()" class="gx-btn bg-gx-purple hover:bg-gx-purpleGlow text-white px-5 py-2.5 rounded-lg font-medium text-sm">
                     Готово
                 </button>
             </div>
@@ -346,17 +380,17 @@
     </div>
 
     <!-- Кастомне Діалогове Вікно (Заміна alert/confirm) -->
-    <div id="dialog-overlay" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-2xl w-full max-w-xs shadow-2xl p-5 text-center">
-            <div class="flex flex-col items-center gap-3 mb-4">
-                <div id="dialog-icon-container" class="w-12 h-12 rounded-full flex items-center justify-center">
-                    <i id="dialog-icon" class="text-2xl"></i>
+    <div id="dialog-overlay" class="fixed inset-0 bg-black/75 z-[100] flex items-center justify-center p-4">
+        <div class="modal-content bg-gx-panel border border-[#2a2a36] rounded-xl w-full max-w-sm shadow-2xl p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div id="dialog-icon-container" class="w-10 h-10 rounded-full flex items-center justify-center">
+                    <i id="dialog-icon" class="text-xl"></i>
                 </div>
-                <h4 id="dialog-title" class="text-base font-extrabold">Сповіщення</h4>
+                <h4 id="dialog-title" class="text-lg font-bold">Сповіщення</h4>
             </div>
-            <p id="dialog-message" class="text-gx-muted text-xs mb-5 leading-relaxed"></p>
-            <div class="flex gap-2 justify-stretch" id="dialog-buttons">
-                <!-- Кнопки -->
+            <p id="dialog-message" class="text-gx-muted text-sm mb-6"></p>
+            <div class="flex justify-end gap-3" id="dialog-buttons">
+                <!-- Кнопки генеруються динамічно -->
             </div>
         </div>
     </div>
@@ -367,8 +401,8 @@
         let habits = JSON.parse(localStorage.getItem('gx_habits')) || [];
         let currentCalendarHabitId = null;
         let currentDetailsDateStr = null;
-        let calendarDate = new Date(); 
-        let toastTimeoutId = null;
+        let calendarDate = new Date(); // Для навігації в календарі
+        let toastTimeoutId = null; // Для керування життєвим циклом тосту
 
         const DAYS_OF_WEEK = [
             { id: 1, name: 'Пн' },
@@ -380,17 +414,143 @@
             { id: 0, name: 'Нд' }
         ];
 
-        // --- ANDROID TACTILE FEEDBACK (Vibration) ---
-        function triggerHaptic(type = 'light') {
-            if (!navigator.vibrate) return; // Пропускаємо, якщо пристрій не підтримує
-            
-            if (type === 'light') {
-                navigator.vibrate(30); // Короткий тихий клік чекбокса
-            } else if (type === 'success') {
-                navigator.vibrate([60, 40, 100]); // Подвійна перемога
-            } else if (type === 'warning') {
-                navigator.vibrate([100, 50, 100]); // Помилка або скасування
+        // --- КОНФЕТІ & ЗВУКОВА СИСТЕМА ---
+        const canvas = document.getElementById('celebration-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let confettiAnimationId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class ConfettiParticle {
+            constructor() {
+                this.x = window.innerWidth / 2 + (Math.random() - 0.5) * 150;
+                this.y = window.innerHeight + 20;
+                this.size = Math.random() * 8 + 6;
+                this.color = `hsl(${Math.random() * 360}, 90%, 65%)`;
+                this.speedX = (Math.random() - 0.5) * 15;
+                this.speedY = -Math.random() * 15 - 12;
+                this.gravity = 0.35;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = (Math.random() - 0.5) * 10;
+                this.opacity = 1;
             }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.speedY += this.gravity;
+                this.rotation += this.rotationSpeed;
+                if (this.y > window.innerHeight) {
+                    this.opacity -= 0.02;
+                }
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate((this.rotation * Math.PI) / 180);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = Math.max(0, this.opacity);
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        function triggerConfetti() {
+            for (let i = 0; i < 120; i++) {
+                particles.push(new ConfettiParticle());
+            }
+            if (!confettiAnimationId) {
+                animateConfetti();
+            }
+        }
+
+        function animateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, index) => {
+                p.update();
+                p.draw();
+                if (p.opacity <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+            if (particles.length > 0) {
+                confettiAnimationId = requestAnimationFrame(animateConfetti);
+            } else {
+                confettiAnimationId = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function playLevelUpSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext();
+                
+                const now = audioCtx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                
+                notes.forEach((freq, index) => {
+                    const osc = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + index * 0.09);
+                    
+                    gainNode.gain.setValueAtTime(0.12, now + index * 0.09);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, now + index * 0.09 + 0.5);
+                    
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+                    
+                    osc.start(now + index * 0.09);
+                    osc.stop(now + index * 0.09 + 0.6);
+                });
+            } catch (e) {
+                console.log("Аудіополітика заблокувала відтворення");
+            }
+        }
+
+        const motivationalMessages = [
+            "Виконано, ти красавчик! ⚡",
+            "Легендарно! Так тримати! 🏆",
+            "Новий рекорд активовано! 🔥",
+            "Божевільний прогрес! Молодчина! 🚀",
+            "Ти просто тигр! Не зупиняйся! 🐯"
+        ];
+
+        function showCelebrationToast() {
+            const toast = document.getElementById('celebration-toast');
+            const textEl = document.getElementById('celebration-text');
+            
+            // Очищуємо попередній таймер зникнення, якщо він був запущений
+            if (toastTimeoutId) {
+                clearTimeout(toastTimeoutId);
+            }
+
+            const randomMsg = motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+            textEl.textContent = randomMsg;
+            
+            // Скидаємо старі класи анімацій та запускаємо нову появу
+            toast.classList.remove('hide');
+            toast.classList.add('show');
+
+            // Плавно ховаємо тост через 6 секунд (6000мс)
+            toastTimeoutId = setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+            }, 6000);
+        }
+
+        function celebrateSuccess() {
+            playLevelUpSound();
+            triggerConfetti();
+            showCelebrationToast();
         }
 
         // --- КАСТОМНИЙ ДІАЛОГ ---
@@ -406,24 +566,21 @@
             msgEl.textContent = message;
 
             if (type === 'danger') {
-                iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center bg-red-500/20 text-red-500";
+                iconContainer.className = "w-10 h-10 rounded-full flex items-center justify-center bg-red-500/20 text-red-500";
                 icon.className = "ph ph-warning-octagon";
-                triggerHaptic('warning');
             } else if (type === 'warning') {
-                iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center bg-yellow-500/20 text-yellow-500";
+                iconContainer.className = "w-10 h-10 rounded-full flex items-center justify-center bg-yellow-500/20 text-yellow-500";
                 icon.className = "ph ph-warning";
-                triggerHaptic('warning');
             } else {
-                iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center bg-gx-purple/20 text-gx-purple";
+                iconContainer.className = "w-10 h-10 rounded-full flex items-center justify-center bg-gx-purple/20 text-gx-purple";
                 icon.className = "ph ph-info";
-                triggerHaptic('light');
             }
 
             btnContainer.innerHTML = '';
             
             if (cancelText) {
                 const cancelBtn = document.createElement('button');
-                cancelBtn.className = "flex-1 py-2.5 rounded-xl text-xs text-gx-muted bg-[#14141b] border border-[#2a2a36] font-semibold active:scale-95 transition-all";
+                cancelBtn.className = "px-4 py-2 rounded-lg text-sm text-gx-muted hover:bg-white/5 transition-colors";
                 cancelBtn.textContent = cancelText;
                 cancelBtn.onclick = () => {
                     overlay.classList.remove('active');
@@ -432,7 +589,7 @@
             }
 
             const confirmBtn = document.createElement('button');
-            confirmBtn.className = `flex-1 py-2.5 rounded-xl text-xs font-semibold text-white active:scale-95 transition-all ${type === 'danger' ? 'bg-red-600' : 'bg-gx-purple'}`;
+            confirmBtn.className = `px-4 py-2 rounded-lg text-sm font-medium transition-colors ${type === 'danger' ? 'bg-red-600 hover:bg-red-500 text-white' : 'bg-gx-purple hover:bg-gx-purpleGlow text-white'}`;
             confirmBtn.textContent = confirmText;
             confirmBtn.onclick = () => {
                 overlay.classList.remove('active');
@@ -443,7 +600,7 @@
             overlay.classList.add('active');
         }
 
-        // --- БЕРЛІНСЬКИЙ ЧАС ---
+        // --- ДОПОМІЖНІ ФУНКЦІЇ ДЛЯ БЕРЛІНСЬКОГО ЧАСУ ---
         function getBerlinDateString(dateObj = new Date()) {
             return new Intl.DateTimeFormat('en-CA', { 
                 timeZone: 'Europe/Berlin', 
@@ -456,7 +613,7 @@
                 timeZone: 'Europe/Berlin',
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
             }).format(new Date());
-            document.getElementById('current-date-display').textContent = displayDate;
+            document.getElementById('current-date-display').textContent = `Сьогодні: ${displayDate} (Берлін)`;
         }
 
         function generateId() {
@@ -467,7 +624,7 @@
             localStorage.setItem('gx_habits', JSON.stringify(habits));
         }
 
-        // --- СТРУКТУРА ДАНИХ ІСТОРІЇ ---
+        // --- РОБОТА ЗІ СТРУКТУРОЮ ДАТИ В ІСТОРІЇ ---
         function ensureDayHistoryStructure(habit, dateStr) {
             if (!habit.history) {
                 habit.history = {};
@@ -497,7 +654,7 @@
             return !!dayData.checklists[clId];
         }
 
-        // Стрік в днях згідно з розкладом
+        // Розрахунок актуального стріка на основі повної історії та розкладу
         function calculateStreak(habit) {
             const todayStr = getBerlinDateString();
             let checkDate = new Date(todayStr);
@@ -515,7 +672,7 @@
                         completedDates.push(new Date(dateStr));
                     } else {
                         if (dateStr === todayStr) {
-                            // Пропускаємо сьогодні, якщо воно ще не відмічене
+                            // Пропускаємо сьогоднішній день
                         } else {
                             break;
                         }
@@ -536,6 +693,7 @@
             return diffDays + 1;
         }
 
+        // --- ЛОГІКА СТРІКІВ ТА СКИДАННЯ ---
         function evaluateStreaks() {
             const todayStr = getBerlinDateString();
 
@@ -557,17 +715,7 @@
             saveData();
         }
 
-        // --- ЕФЕКТ КОНФЕТІ ---
-        function triggerConfetti() {
-            for (let i = 0; i < 100; i++) {
-                particles.push(new ConfettiParticle());
-            }
-            if (!confettiAnimationId) {
-                animateConfetti();
-            }
-        }
-
-        // --- РЕНДЕР СПИСКУ ЗВИЧОК (Мобільний вигляд) ---
+        // --- РЕНДЕР ІНТЕРФЕЙСУ СПИСКУ ЗВИЧОК ---
         function renderHabits() {
             const container = document.getElementById('habits-container');
             const emptyState = document.getElementById('empty-state');
@@ -586,11 +734,11 @@
                 const isCompletedToday = dayData && (typeof dayData === 'boolean' ? dayData : dayData.completed);
 
                 const habitEl = document.createElement('div');
-                habitEl.className = `bg-gx-panel border border-[#2a2a36] rounded-2xl p-4 flex gap-3 items-start transition-all duration-300 ${isCompletedToday ? 'habit-completed border-l-4 border-l-[#10b981]' : 'border-l-4 border-l-gx-purple'}`;
+                habitEl.className = `bg-gx-panel border border-[#2a2a36] rounded-xl p-4 flex gap-4 items-start transition-all duration-300 hover:border-[#3a3a4a] ${isCompletedToday ? 'habit-completed border-l-4 border-l-[#10b981]' : 'border-l-4 border-l-gx-purple'}`;
                 
                 const checkBtnHtml = `
-                    <button onclick="toggleMainHabit('${habit.id}')" class="mt-0.5 flex-shrink-0 w-10 h-10 rounded-full border-2 border-gx-muted flex items-center justify-center check-circle ${isCompletedToday ? 'completed' : 'hover:border-gx-purple'}" title="Відмітити">
-                        ${isCompletedToday ? `<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline class="check-path" points="20 6 9 17 4 12"></polyline></svg>` : ''}
+                    <button onclick="toggleMainHabit('${habit.id}')" class="mt-1 flex-shrink-0 w-6 h-6 rounded-full border-2 border-gx-muted flex items-center justify-center check-circle ${isCompletedToday ? 'completed' : 'hover:border-gx-purple'}" title="Відмітити виконання звички">
+                        ${isCompletedToday ? `<svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline class="check-path" points="20 6 9 17 4 12"></polyline></svg>` : ''}
                     </button>
                 `;
 
@@ -599,10 +747,10 @@
                     const clItems = habit.checklists.map(cl => {
                         const isCompleted = isChecklistCompleted(habit, todayStr, cl.id);
                         return `
-                            <label class="flex items-center gap-2.5 text-sm cursor-pointer group mt-2.5 py-1">
+                            <label class="flex items-center gap-2 text-sm cursor-pointer group mt-2">
                                 <input type="checkbox" class="hidden" onchange="toggleChecklistItem('${habit.id}', '${cl.id}')" ${isCompleted ? 'checked' : ''}>
-                                <div class="w-5 h-5 rounded bg-[#0f0f15] border border-[#2a2a36] flex items-center justify-center group-hover:border-gx-purple transition-colors ${isCompleted ? '!bg-gx-purple !border-gx-purple' : ''}">
-                                    ${isCompleted ? '<i class="ph ph-check text-sm text-white"></i>' : ''}
+                                <div class="w-4 h-4 rounded bg-[#0f0f15] border border-[#2a2a36] flex items-center justify-center group-hover:border-gx-purple transition-colors ${isCompleted ? '!bg-gx-purple !border-gx-purple' : ''}">
+                                    ${isCompleted ? '<i class="ph ph-check text-xs text-white"></i>' : ''}
                                 </div>
                                 <span class="${isCompleted ? 'text-gx-muted line-through' : 'text-gray-300'} transition-colors">${cl.text}</span>
                             </label>
@@ -612,11 +760,11 @@
                     const completedCount = habit.checklists.filter(cl => isChecklistCompleted(habit, todayStr, cl.id)).length;
                     
                     checklistHtml = `
-                        <div class="mt-2 flex gap-1.5 items-center text-[11px] font-bold bg-[#0f0f15] px-2.5 py-1 rounded-lg w-fit border border-[#2a2a36] text-gx-muted uppercase tracking-wider">
-                            <i class="ph ph-list-checks text-gx-purple text-xs"></i>
-                            <span>${completedCount}/${habit.checklists.length} виконано</span>
+                        <div class="mt-3 flex gap-2 items-center text-xs bg-[#0f0f15] px-2 py-1 rounded-md w-fit border border-[#2a2a36]">
+                            <i class="ph ph-list-checks text-gx-purple"></i>
+                            <span class="text-gx-muted">${completedCount}/${habit.checklists.length} виконано</span>
                         </div>
-                        <div class="flex flex-col gap-1 mt-1 pl-1">
+                        <div class="flex flex-wrap gap-x-6 gap-y-2 mt-2 pl-1">
                             ${clItems}
                         </div>
                     `;
@@ -629,30 +777,30 @@
                 }
 
                 const centerHtml = `
-                    <div class="flex-1 min-w-0">
+                    <div class="flex-1">
                         <div class="flex flex-col">
-                            <h3 class="text-base font-bold strike-text truncate ${isCompletedToday ? 'text-gx-muted' : 'text-white'}">${habit.title}</h3>
-                            <span class="text-xs text-gx-muted mt-0.5">${freqText}</span>
+                            <h3 class="text-lg font-medium strike-text ${isCompletedToday ? 'text-gx-muted' : 'text-white'}">${habit.title}</h3>
+                            <span class="text-xs text-gx-muted mt-1">${freqText}</span>
                         </div>
                         ${checklistHtml}
                     </div>
                 `;
 
                 const rightHtml = `
-                    <div class="flex flex-col items-end justify-between self-stretch pl-1 min-h-[4.5rem]">
-                        <div class="flex items-center gap-1 bg-[#14141b] border border-[#2a2a36] px-2 py-0.5 rounded-lg">
-                            <i class="ph-fill ph-fire text-[#ef4444] text-xs ${habit.streak > 0 ? 'streak-fire' : 'opacity-40'}"></i>
-                            <span class="font-black text-xs ${habit.streak > 0 ? 'text-white' : 'text-gx-muted'}">${habit.streak}</span>
+                    <div class="flex flex-col items-end justify-between h-full gap-4">
+                        <div class="flex items-center gap-1 bg-[#14141b] border border-[#2a2a36] px-2 py-1 rounded-md">
+                            <i class="ph-fill ph-fire text-[#ef4444] ${habit.streak > 0 ? 'streak-fire' : 'opacity-50'}"></i>
+                            <span class="font-bold text-sm ${habit.streak > 0 ? 'text-white' : 'text-gx-muted'}">${habit.streak}</span>
                         </div>
                         
-                        <div class="flex items-center gap-1.5 text-gx-muted">
-                            <button onclick="openCalendarModal('${habit.id}')" class="p-2 rounded-full hover:bg-white/5 hover:text-gx-purple transition-colors" title="Календар">
+                        <div class="flex items-center gap-2 text-gx-muted">
+                            <button onclick="openCalendarModal('${habit.id}')" class="p-1.5 rounded hover:bg-white/10 hover:text-gx-purple transition-colors" title="Календар">
                                 <i class="ph ph-calendar-blank text-lg"></i>
                             </button>
-                            <button onclick="openModal('${habit.id}')" class="p-2 rounded-full hover:bg-white/5 hover:text-[#3b82f6] transition-colors" title="Редагувати">
+                            <button onclick="openModal('${habit.id}')" class="p-1.5 rounded hover:bg-white/10 hover:text-[#3b82f6] transition-colors" title="Редагувати">
                                 <i class="ph ph-pencil-simple text-lg"></i>
                             </button>
-                            <button onclick="deleteHabit('${habit.id}')" class="p-2 rounded-full hover:bg-white/5 hover:text-[#ef4444] transition-colors" title="Видалити">
+                            <button onclick="deleteHabit('${habit.id}')" class="p-1.5 rounded hover:bg-white/10 hover:text-[#ef4444] transition-colors" title="Видалити">
                                 <i class="ph ph-trash text-lg"></i>
                             </button>
                         </div>
@@ -665,6 +813,8 @@
         }
 
         // --- ЛОГІКА ВЗАЄМОДІЇ ---
+        
+        // Виконання головної звички (З святкуванням при активації)
         function toggleMainHabit(habitId) {
             const habit = habits.find(h => h.id === habitId);
             if (!habit) return;
@@ -675,11 +825,9 @@
             const isCompleted = habit.history[todayStr].completed;
             habit.history[todayStr].completed = !isCompleted;
 
+            // Якщо ми перемкнули у стан "виконано" — запускаємо святкування!
             if (habit.history[todayStr].completed) {
-                triggerHaptic('success');
                 celebrateSuccess();
-            } else {
-                triggerHaptic('light');
             }
 
             habit.streak = calculateStreak(habit);
@@ -687,6 +835,7 @@
             renderHabits();
         }
 
+        // Перемикання пункту чекліста
         function toggleChecklistItem(habitId, clId) {
             const habit = habits.find(h => h.id === habitId);
             if (!habit) return;
@@ -697,9 +846,7 @@
             const isCompleted = !!habit.history[todayStr].checklists[clId];
             habit.history[todayStr].checklists[clId] = !isCompleted;
 
-            triggerHaptic('light');
-
-            // Якщо чекліст закритий — ніжний звуковий сигнал
+            // Якщо чекліст виконано — даємо легкий допаміновий звук
             if (habit.history[todayStr].checklists[clId]) {
                 try {
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -707,13 +854,13 @@
                         const audioCtx = new AudioContext();
                         const osc = audioCtx.createOscillator();
                         const gain = audioCtx.createGain();
-                        osc.frequency.setValueAtTime(880, audioCtx.currentTime); 
-                        gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.12);
+                        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Тонкий приємний "пінг"
+                        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
                         osc.connect(gain);
                         gain.connect(audioCtx.destination);
                         osc.start();
-                        osc.stop(audioCtx.currentTime + 0.12);
+                        osc.stop(audioCtx.currentTime + 0.15);
                     }
                 } catch(e){}
             }
@@ -722,13 +869,14 @@
             renderHabits();
         }
 
+        // Видалення
         function deleteHabit(habitId) {
             showCustomDialog({
                 title: 'Видалити звичку?',
-                message: 'Цю корисну ціль буде стерто назавжди.',
+                message: 'Ви впевнені, що хочете видалити цю ціль назавжди? Цю дію не можна скасувати.',
                 type: 'danger',
-                confirmText: 'Стерти',
-                cancelText: 'Назад',
+                confirmText: 'Видалити',
+                cancelText: 'Скасувати',
                 onConfirm: () => {
                     habits = habits.filter(h => h.id !== habitId);
                     saveData();
@@ -745,7 +893,7 @@
                 container.innerHTML += `
                     <label class="day-checkbox cursor-pointer flex-1 text-center">
                         <input type="checkbox" class="hidden" value="${day.id}" checked>
-                        <div class="py-3 rounded-xl border border-[#2a2a36] bg-[#14141b] text-gx-muted text-xs font-bold transition-all">
+                        <div class="px-2 py-2 rounded-lg border border-[#2a2a36] bg-[#14141b] text-gx-muted text-sm transition-all hover:bg-[#252530]">
                             ${day.name}
                         </div>
                     </label>
@@ -756,7 +904,6 @@
         function openModal(habitId = null) {
             document.getElementById('modal-overlay').classList.add('active');
             renderFormDays();
-            triggerHaptic('light');
             
             const titleInput = document.getElementById('habit-title');
             const idInput = document.getElementById('habit-id');
@@ -789,7 +936,6 @@
 
         function closeModal() {
             document.getElementById('modal-overlay').classList.remove('active');
-            triggerHaptic('light');
         }
 
         function addChecklistItemToForm(text = '') {
@@ -797,16 +943,15 @@
             const itemHtml = document.createElement('div');
             itemHtml.className = 'flex items-center gap-2';
             itemHtml.innerHTML = `
-                <i class="ph ph-dots-six-vertical text-gx-muted"></i>
-                <input type="text" value="${text}" placeholder="Пункт" class="cl-input flex-1 bg-[#14141b] border border-[#2a2a36] focus:border-gx-purple rounded-xl px-3 py-2.5 text-sm text-white outline-none">
-                <button onclick="this.parentElement.remove()" class="text-[#ef4444] p-2 hover:bg-red-500/10 rounded-xl"><i class="ph ph-trash"></i></button>
+                <i class="ph ph-dots-six-vertical text-gx-muted cursor-move"></i>
+                <input type="text" value="${text}" placeholder="Пункт чек-листа" class="cl-input flex-1 bg-[#14141b] border border-[#2a2a36] focus:border-gx-purple rounded-md px-3 py-2 text-sm text-white outline-none">
+                <button onclick="this.parentElement.remove()" class="text-[#ef4444] p-2 hover:bg-red-500/10 rounded-md transition-colors"><i class="ph ph-trash"></i></button>
             `;
             container.appendChild(itemHtml);
         }
 
         function addChecklistItem() {
             addChecklistItemToForm('');
-            triggerHaptic('light');
             const container = document.getElementById('checklist-container');
             container.scrollTop = container.scrollHeight;
         }
@@ -818,7 +963,7 @@
             if (!title) {
                 showCustomDialog({
                     title: 'Увага',
-                    message: 'Будь ласка, введіть назву цілі.',
+                    message: 'Будь ласка, введіть назву звички.',
                     type: 'warning'
                 });
                 return;
@@ -830,7 +975,7 @@
             if (selectedDays.length === 0) {
                 showCustomDialog({
                     title: 'Увага',
-                    message: 'Оберіть принаймні один день.',
+                    message: 'Виберіть хоча б один день виконання звички.',
                     type: 'warning'
                 });
                 return;
@@ -873,45 +1018,40 @@
                 habits.push(newHabit);
             }
 
-            triggerHaptic('success');
             saveData();
             renderHabits();
             closeModal();
         }
 
-        // --- КАЛЕНДАР ---
+        // --- МОДАЛЬНЕ ВІКНО КАЛЕНДАРЯ ---
         function openCalendarModal(habitId) {
             currentCalendarHabitId = habitId;
             calendarDate = new Date();
             renderCalendar();
-            triggerHaptic('light');
             document.getElementById('calendar-modal-overlay').classList.add('active');
         }
 
         function closeCalendarModal() {
             document.getElementById('calendar-modal-overlay').classList.remove('active');
             currentCalendarHabitId = null;
-            triggerHaptic('light');
         }
 
         function changeCalendarMonth(offset) {
             calendarDate.setMonth(calendarDate.getMonth() + offset);
-            triggerHaptic('light');
             renderCalendar();
         }
 
-        // --- ДЕТАЛІ ДНЯ (Bottom Sheet) ---
+        // --- МОДАЛЬНЕ ВІКНО ДЕТАЛЕЙ ДНЯ ---
         function openDayDetailsModal(dateString) {
             currentDetailsDateStr = dateString;
             const habit = habits.find(h => h.id === currentCalendarHabitId);
             if (!habit) return;
 
             ensureDayHistoryStructure(habit, dateString);
-            triggerHaptic('light');
 
             const dateObj = new Date(dateString);
             const formattedDate = new Intl.DateTimeFormat('uk-UA', { 
-                weekday: 'long', month: 'long', day: 'numeric' 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
             }).format(dateObj);
 
             document.getElementById('details-modal-title').textContent = habit.title;
@@ -930,10 +1070,10 @@
 
             const statusBtn = document.getElementById('details-day-status-btn');
             if (isCompleted) {
-                statusBtn.className = "w-full py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30";
+                statusBtn.className = "w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30";
                 statusBtn.innerHTML = `<i class="ph-fill ph-check-circle text-lg"></i> День виконано`;
             } else {
-                statusBtn.className = "w-full py-3.5 px-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-200 bg-[#14141b] text-gx-muted border border-[#2a2a36] hover:bg-white/5";
+                statusBtn.className = "w-full py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-all duration-200 bg-[#14141b] text-gx-muted border border-[#2a2a36] hover:bg-white/5";
                 statusBtn.innerHTML = `<i class="ph ph-circle text-lg"></i> День не виконано`;
             }
 
@@ -946,9 +1086,9 @@
                 habit.checklists.forEach(cl => {
                     const isClCompleted = !!dayData.checklists[cl.id];
                     clContainer.innerHTML += `
-                        <label class="flex items-center gap-2.5 text-sm cursor-pointer group py-2.5 border-b border-[#2a2a36]/30 last:border-none">
+                        <label class="flex items-center gap-2 text-sm cursor-pointer group py-1.5 border-b border-[#2a2a36]/30 last:border-none">
                             <input type="checkbox" class="hidden" onchange="toggleDetailsChecklistItem('${cl.id}')" ${isClCompleted ? 'checked' : ''}>
-                            <div class="w-5 h-5 rounded bg-[#14141b] border border-[#2a2a36] flex items-center justify-center group-hover:border-gx-purple transition-colors ${isClCompleted ? '!bg-gx-purple !border-gx-purple' : ''}">
+                            <div class="w-4 h-4 rounded bg-[#14141b] border border-[#2a2a36] flex items-center justify-center group-hover:border-gx-purple transition-colors ${isClCompleted ? '!bg-gx-purple !border-gx-purple' : ''}">
                                 ${isClCompleted ? '<i class="ph ph-check text-xs text-white"></i>' : ''}
                             </div>
                             <span class="${isClCompleted ? 'text-gx-muted line-through' : 'text-gray-300'} transition-colors">${cl.text}</span>
@@ -960,6 +1100,7 @@
             }
         }
 
+        // Перемикач статусу дня у деталях (Також запускає нагороду!)
         function toggleDetailsDayStatus() {
             const habit = habits.find(h => h.id === currentCalendarHabitId);
             if (!habit || !currentDetailsDateStr) return;
@@ -967,11 +1108,9 @@
             ensureDayHistoryStructure(habit, currentDetailsDateStr);
             habit.history[currentDetailsDateStr].completed = !habit.history[currentDetailsDateStr].completed;
 
+            // Якщо увімкнули виконання — запускаємо ефекти
             if (habit.history[currentDetailsDateStr].completed) {
-                triggerHaptic('success');
                 celebrateSuccess();
-            } else {
-                triggerHaptic('warning');
             }
 
             habit.streak = calculateStreak(habit);
@@ -989,7 +1128,6 @@
             const isCompleted = !!habit.history[currentDetailsDateStr].checklists[clId];
             habit.history[currentDetailsDateStr].checklists[clId] = !isCompleted;
 
-            triggerHaptic('light');
             saveData();
             renderHabits();
             renderDayDetailsContent();
@@ -998,9 +1136,9 @@
         function closeDayDetailsModal() {
             document.getElementById('day-details-modal-overlay').classList.remove('active');
             currentDetailsDateStr = null;
-            triggerHaptic('light');
         }
 
+        // --- МАЛЮВАННЯ КАЛЕНДАРЯ ---
         function renderCalendar() {
             if (!currentCalendarHabitId) return;
             const habit = habits.find(h => h.id === currentCalendarHabitId);
@@ -1042,12 +1180,12 @@
                 const isFuture = dString > todayStr;
                 const isToday = dString === todayStr;
 
-                let classes = "w-9 h-9 mx-auto flex flex-col items-center justify-center rounded-xl text-xs font-bold relative transition-all duration-200 select-none ";
+                let classes = "w-9 h-9 mx-auto flex flex-col items-center justify-center rounded-lg text-sm relative transition-all duration-200 select-none ";
                 let dotHtml = "";
                 let clickAction = "";
 
                 if (!isFuture) {
-                    classes += "cursor-pointer active:scale-90 ";
+                    classes += "cursor-pointer hover:scale-105 active:scale-95 ";
                     clickAction = `onclick="openDayDetailsModal('${dString}')"`;
                 } else {
                     classes += "opacity-30 cursor-not-allowed ";
@@ -1055,14 +1193,14 @@
 
                 if (isCompleted) {
                     classes += "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 ";
-                    dotHtml = `<div class="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-0.5"></div>`;
+                    dotHtml = `<div class="w-1 h-1 bg-emerald-400 rounded-full mt-0.5"></div>`;
                 } else if (!isFuture && isScheduled) {
                     classes += "bg-rose-500/10 text-rose-400 border border-rose-500/20 ";
-                    dotHtml = `<div class="w-1.5 h-1.5 bg-rose-400 rounded-full mt-0.5"></div>`;
+                    dotHtml = `<div class="w-1 h-1 bg-rose-400 rounded-full mt-0.5"></div>`;
                 } else if (isToday) {
-                    classes += "border border-gx-purple text-gx-purple ";
+                    classes += "border border-gx-purple text-gx-purple font-semibold ";
                 } else {
-                    classes += "bg-white/5 text-gx-muted ";
+                    classes += "bg-white/5 text-gx-muted hover:bg-white/10 ";
                 }
 
                 grid.innerHTML += `
@@ -1083,11 +1221,7 @@
             renderHabits();
         });
 
-        // Конфеті рендер
-        const particles = [];
-        let confettiAnimationId = null;
-
-        // Керування закриттям
+        // Налаштування закриття модалок при кліку поза вікном
         document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
         document.getElementById('calendar-modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeCalendarModal(); });
         document.getElementById('day-details-modal-overlay').addEventListener('click', function(e) { if (e.target === this) closeDayDetailsModal(); });
